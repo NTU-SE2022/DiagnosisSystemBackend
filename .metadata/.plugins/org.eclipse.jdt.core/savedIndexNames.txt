@@ -1,0 +1,2 @@
+INDEX VERSION 1.131+C:\Users\user\Downloads\DiagnosisSystemBackend\.metadata\.plugins\org.eclipse.jdt.core
+2345048421.index
