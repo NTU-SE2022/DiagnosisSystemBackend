@@ -18,7 +18,7 @@ import org.web3j.tx.gas.StaticGasProvider;
 import org.bouncycastle.util.BigIntegers;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.group3.DiagnosisSystemBackend.dto.MedicalCertificate;
+import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
 
 
 @RestController
@@ -34,7 +34,7 @@ public class DoctorController {
 		Credentials credentials = Credentials.create(privatekey);
 		
 		ContractGasProvider provider = new StaticGasProvider(BigInteger.valueOf(20000000000L), BigInteger.valueOf(6721975L));
-		MedicalCertificate contract = MedicalCertificate.deploy(web3j, credentials, provider).send();
+		MedicalCertificateContract contract = MedicalCertificateContract.deploy(web3j, credentials, provider).send();
         String contractAddress = contract.getContractAddress();
         System.out.println(contractAddress);
         
