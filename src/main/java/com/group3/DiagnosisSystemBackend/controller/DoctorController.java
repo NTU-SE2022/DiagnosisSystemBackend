@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -42,4 +43,8 @@ public class DoctorController {
         System.out.println(contract.owner().send());
         return contractAddress;
 	}
+        @RequestMapping("/test")
+        public @ResponseBody String greeting() {
+                return "Hello, World";
+        }
 }
