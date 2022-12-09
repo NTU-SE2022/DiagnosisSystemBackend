@@ -23,7 +23,7 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.bouncycastle.util.BigIntegers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.json.JSONObject;
 
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
 import com.group3.DiagnosisSystemBackend.dto.Response;
@@ -86,6 +86,8 @@ public class DoctorController {
 	        	response.setStatus(HttpStatus.OK.value());
 	        }
 	        else {
+	        	System.out.println(successSymtoms);
+	        	System.out.println(successLevels);
 	        	response.setStatus(HttpStatus.BAD_REQUEST.value());
 	        }
 		}
