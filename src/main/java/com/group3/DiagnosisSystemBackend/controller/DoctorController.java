@@ -69,6 +69,9 @@ public class DoctorController {
 			String patientAddress = requestJson.getString("patientAddress");
 			String symptoms = requestJson.getString("symptoms");
 			String levels = requestJson.getString("levels");
+			System.out.println(patientAddress);
+        	System.out.println(symptoms);
+        	System.out.println(levels);
 			
 			//add MedicalCertificateContract to patientAddress
 			Credentials credentials = Credentials.create(privatekey);
@@ -80,8 +83,8 @@ public class DoctorController {
 	        //check MedicalCertificateContract exist patientAddress
 	        List CertificateIds = contract.listCertificatesIdOfAddress(patientAddress).send();
 	        System.out.println(CertificateIds);
-	        String successSymtoms = contract.getSymptoms(BigInteger.valueOf(CertificateIds.size() - 1)).send();
-	        String successLevels = contract.getLevels(BigInteger.valueOf(CertificateIds.size() - 1)).send();
+	        String successSymtoms = contract.getSymptoms((BigInteger) CertificateIds.get(CertificateIds.size() - 1)).send();
+	        String successLevels = contract.getLevels((BigInteger) CertificateIds.get(CertificateIds.size() - 1)).send();
 	        if (successSymtoms.equals(symptoms) && successLevels.equals(levels)) {
 	        	response.setStatus(HttpStatus.OK.value());
 	        }
