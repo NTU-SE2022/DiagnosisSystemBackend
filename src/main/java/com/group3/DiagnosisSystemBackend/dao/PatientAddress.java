@@ -1,14 +1,13 @@
 package com.group3.DiagnosisSystemBackend.dao;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "medicalCertificate")
-public class MedicalCertificate {
+@Table(name = "patientAddress")
+public class PatientAddress {
 	@Id
     @Column(name = "address", nullable = false)
 	private String address;

@@ -7,8 +7,11 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,14 +29,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONObject;
 
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
+import com.group3.DiagnosisSystemBackend.dao.PatientAddress;
+import com.group3.DiagnosisSystemBackend.dao.Clinic;
+import com.group3.DiagnosisSystemBackend.dao.Doctor;
+import com.group3.DiagnosisSystemBackend.dto.PatientAddressResponse;
 import com.group3.DiagnosisSystemBackend.dto.Response;
+import com.group3.DiagnosisSystemBackend.repository.PatientAddressRepository;
+import com.group3.DiagnosisSystemBackend.repository.ClinicRepository;
+import com.group3.DiagnosisSystemBackend.repository.DoctorRepository;
 
 
 
 @RestController
 @RequestMapping("/api")
 public class DoctorController {
-	
+
+	@Autowired
+	private PatientAddressRepository patientAddressRepository;
+	@Autowired
+	private ClinicRepository clinicRepository;
+	@Autowired
+	private DoctorRepository doctorRepository;
 	@Autowired
 	private Web3j web3j;
 	private String privatekey = "0xca10c417e24a246700e36ef9b4f3e3d30fe9926f9b714de50a99498c3ab0d1de";
@@ -72,7 +88,7 @@ public class DoctorController {
 			System.out.println(patientAddress);
         	System.out.println(symptoms);
         	System.out.println(levels);
-			
+        	
 			//add MedicalCertificateContract to patientAddress
 			Credentials credentials = Credentials.create(privatekey);
 			ContractGasProvider provider = new StaticGasProvider(BigInteger.valueOf(20000000000L), BigInteger.valueOf(6721975L));
@@ -106,4 +122,66 @@ public class DoctorController {
     public @ResponseBody String greeting() {
         return "Hello, World";
     }
+    
+	@GetMapping("patientAddresses")
+	public PatientAddressResponse getAllPatientAddresses() {
+		PatientAddressResponse response = new PatientAddressResponse();
+		com.group3.DiagnosisSystemBackend.dto.Patient patientAddress = new com.group3.DiagnosisSystemBackend.dto.Patient();
+		patientAddress.setPatient(patientAddressRepository.findAll());
+		if(patientAddress.getPatient() != null) {
+			response.setStatus(HttpStatus.OK.value());
+		} else {
+			patientAddress.setPatient(new ArrayList<com.group3.DiagnosisSystemBackend.dao.PatientAddress>());
+			response.setStatus(HttpStatus.BAD_REQUEST.value());
+		}
+		response.setResponse(patientAddress);
+		return response;
+	}
+
+	@GetMapping("patientAddresses/{address}")
+	public PatientAddress newPatientAddresses(@PathVariable String address) {
+		PatientAddress newPatientAddress = new PatientAddress();
+		newPatientAddress.setAddress(address);
+		
+		return patientAddressRepository.save(newPatientAddress);
+	}
+
+	@GetMapping("clinic/{roomNo}")
+	public Clinic getClinic(@PathVariable int roomNo) {
+		return clinicRepository.findById(roomNo);
+	}
+	
+	@PutMapping("clinic/{roomNo}/{patient}")
+	public Clinic replaceClinic(@PathVariable int roomNo, @PathVariable String patient) {
+		Clinic clinic = clinicRepository.findById(roomNo);
+		if(patient.equals("none")) patient = "";
+		clinic.setPatient(patient);
+		return clinicRepository.save(clinic);
+	}
+	
+	@GetMapping("doctor")
+	public List<Doctor> getAllDoctors() {
+		return doctorRepository.findAll();
+	}
+
+
+	@PostMapping("doctor")
+	public Doctor newDoctor(@RequestBody Doctor newDoctor) {
+		String pw_hash = BCrypt.hashpw(newDoctor.getPassword(), BCrypt.gensalt());
+		newDoctor.setPassword(pw_hash);
+		
+		return doctorRepository.save(newDoctor);
+	}
+
+	@PostMapping("login")
+	public boolean login(@RequestBody Doctor doctor) {
+		System.out.println(doctor.getAccount() + "  " + doctor.getPassword());
+		String dbPassword = doctorRepository.findPasswordByAccount(doctor.getAccount());
+		if(dbPassword == null) return false;
+		if (BCrypt.checkpw(doctor.getPassword(), dbPassword))
+		    return true;
+		else
+		    return false;
+	}
+	
 }
