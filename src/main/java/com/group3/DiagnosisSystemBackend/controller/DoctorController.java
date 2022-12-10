@@ -15,22 +15,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
-import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.response.Web3ClientVersion;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
-import org.bouncycastle.util.BigIntegers;
+import org.web3j.protocol.exceptions.TransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.json.JSONObject;
 
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificate;
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
@@ -73,7 +67,7 @@ public class DoctorController {
 	@Autowired
 	private Web3j web3j;
 	private String hospitalPrivaeKey = "0xca10c417e24a246700e36ef9b4f3e3d30fe9926f9b714de50a99498c3ab0d1de";  // aws
-	private String medicalCertiticateContractAddress = "0xb5ce1a4dbed6a878913157e76a3c24150d117840";          // aws new
+	private String medicalCertiticateContractAddress = "0x448f50b88d03b434cee1b7febf9f6cad51983565";          // aws new
 //	private String medicalCertiticateContractAddress = "0xe02401b8b4d84189d0c013e9e20b2c87a33a5881";          // aws old
 //	private String hospitalPrivaeKey = "d5f66c6ae911366a9e21819bc9734031fc984456c404ac37bfcd2ddbc42200c5";    // local
 //	private String medicalCertiticateContractAddress = "0xae65681993ad0b95540b743b1ea7995dd174b173";          // local
@@ -171,11 +165,13 @@ public class DoctorController {
 	public ResponseEntity<SuccessResponse> createMedicalCertificate(
 		@RequestBody(required=true) MedicalCertificate medicalCertificate)
 	{
-			
-		if (medicalCertificate.checkNULL()) {
+		
+		// address no null or ""	
+		if (medicalCertificate.getPatientAddress().isEmpty()) {
 			return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
 		}
-        	
+        
+		// blockchain
 		try {
 			//add MedicalCertificateContract to patientAddress
 			Credentials credentials = Credentials.create(hospitalPrivaeKey);
@@ -206,6 +202,13 @@ public class DoctorController {
 				return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
 	        }
 		}
+		catch (RuntimeException e) {
+        	System.out.println(e.toString());
+        	if (e.toString().contains("revert The number of symptoms and levels are not equal.")) {
+        		return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
+        	}
+			return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         catch (Exception e) {
         	System.out.println(e.toString());
 			return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
