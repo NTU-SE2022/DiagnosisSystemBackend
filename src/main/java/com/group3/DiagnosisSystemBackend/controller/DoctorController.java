@@ -34,6 +34,9 @@ import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
 import com.group3.DiagnosisSystemBackend.dao.PatientAddress;
 import com.group3.DiagnosisSystemBackend.dao.Clinic;
 import com.group3.DiagnosisSystemBackend.dao.Doctor;
+import com.group3.DiagnosisSystemBackend.dto.ClinicReplaceResponse;
+import com.group3.DiagnosisSystemBackend.dto.ClinicResponse;
+import com.group3.DiagnosisSystemBackend.dto.DoctorLoginResponse;
 import com.group3.DiagnosisSystemBackend.dto.PatientAddressResponse;
 import com.group3.DiagnosisSystemBackend.dto.Response;
 import com.group3.DiagnosisSystemBackend.repository.PatientAddressRepository;
@@ -72,18 +75,18 @@ public class DoctorController {
 	}
 	
 	@PostMapping("/createCertificate")
-	// Info for test
-    // String local_patientAddress = "0x81025fA5928C40C679d914E4C43F5d3E38018b11";
-	// String aws_patientAddress = "0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96";
-    // String symptoms = "Burning,cancer";
-	// String levels = "0,0";
+		// Info for test
+        // String local_patientAddress = "0x81025fA5928C40C679d914E4C43F5d3E38018b11";
+		// String aws_patientAddress = "0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96";
+        // String symptoms = "Burning,cancer";
+		// String levels = "0,0";
 	public ResponseEntity<Response> createCertificate(@RequestBody MedicalCertificate medicalCertificate) throws Exception {
-
+			
 		if (!medicalCertificate.checkNotNULL()) {
 			Response response = new Response(HttpStatus.BAD_REQUEST.value(), false, "patientAddress / symptoms / levels has null value");
 			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 		}
-		
+        	
 		try {
 			//add MedicalCertificateContract to patientAddress
 			Credentials credentials = Credentials.create(hospitalPrivaeKey);
@@ -152,16 +155,31 @@ public class DoctorController {
 
 	@GetMapping("clinic/{roomNo}")
 	public Clinic getClinic(@PathVariable int roomNo) {
+		/*ClinicResponse response = new ClinicResponse();
+		com.group3.DiagnosisSystemBackend.dto.Clinic clinic = new com.group3.DiagnosisSystemBackend.dto.Clinic();
+		clinic.setClinic(clinicRepository.findById(roomNo));
+		if(clinic.getClinic() != null) {
+			response.setStatus(HttpStatus.OK.value());
+		} else {
+			clinic.setClinic(new ArrayList<com.group3.DiagnosisSystemBackend.dao.Clinic>());
+			response.setStatus(HttpStatus.BAD_REQUEST.value());
+		}
+		response.setResponse(clinic);
+		return response;*/
 		return clinicRepository.findById(roomNo);
 	}
 	
-	@PutMapping("clinic/{roomNo}/{patient}")
-	public Clinic replaceClinic(@PathVariable int roomNo, @PathVariable String patient) {
-		Clinic clinic = clinicRepository.findById(roomNo);
-		if(patient.equals("none")) patient = "";
-		clinic.setPatient(patient);
-		return clinicRepository.save(clinic);
-	}
+//	@PutMapping("clinic/{roomNo}/{patient}")
+//	public ClinicReplaceResponse replaceClinic(@PathVariable int roomNo, @PathVariable String patient) {
+//		ClinicReplaceResponse response = new ClinicReplaceResponse();
+//		com.group3.DiagnosisSystemBackend.dto.Patient clinicReplace = new com.group3.DiagnosisSystemBackend.dto.Patient();
+//		ClinicReplaceResponse clinicReplace = clinicRepository.findById(roomNo);
+//		if(patient.equals("none")) patient = "";
+//		response.setStatus(HttpStatus.OK.value());
+//		clinicReplace.setPatient(patient);
+//		return response;
+//		//return clinicRepository.save(clinicReplace);
+//	}
 	
 	@GetMapping("doctor")
 	public List<Doctor> getAllDoctors() {
@@ -178,14 +196,17 @@ public class DoctorController {
 	}
 
 	@PostMapping("login")
-	public boolean login(@RequestBody Doctor doctor) {
+	public DoctorLoginResponse login(@RequestBody Doctor doctor) {
 		System.out.println(doctor.getAccount() + "  " + doctor.getPassword());
 		String dbPassword = doctorRepository.findPasswordByAccount(doctor.getAccount());
-		if(dbPassword == null) return false;
+		DoctorLoginResponse response = new DoctorLoginResponse();
+		if(dbPassword == null) return null;
 		if (BCrypt.checkpw(doctor.getPassword(), dbPassword))
-		    return true;
+			response.setStatus(HttpStatus.OK.value());
 		else
-		    return false;
+			response.setStatus(HttpStatus.BAD_REQUEST.value());
+		
+		return response;
 	}
 	
 }
