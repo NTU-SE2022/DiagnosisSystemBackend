@@ -86,12 +86,12 @@ public class DoctorController {
         return contractAddress;
 	}
 	
-	@Operation(summary = "Test API Server", 
-			   description = "Test API Server")
-	@GetMapping(path = "/test")
-    public @ResponseBody String greeting() 
+	@Operation(summary = "Hello Health", 
+			   description = "Hello Health")
+	@GetMapping(path = "/health", produces = MediaType.TEXT_HTML_VALUE)
+    public String greeting() 
 	{
-        return "Hello, World";
+		return "Hello Health";
     }
 	
 
