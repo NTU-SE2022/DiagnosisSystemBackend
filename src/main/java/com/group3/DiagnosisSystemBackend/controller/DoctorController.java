@@ -34,9 +34,9 @@ import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
 import com.group3.DiagnosisSystemBackend.dao.PatientAddress;
 import com.group3.DiagnosisSystemBackend.dao.Clinic;
 import com.group3.DiagnosisSystemBackend.dao.Doctor;
-import com.group3.DiagnosisSystemBackend.dto.ClinicReplaceResponse;
 import com.group3.DiagnosisSystemBackend.dto.ClinicResponse;
 import com.group3.DiagnosisSystemBackend.dto.DoctorLoginResponse;
+import com.group3.DiagnosisSystemBackend.dto.Patient;
 import com.group3.DiagnosisSystemBackend.dto.PatientAddressResponse;
 import com.group3.DiagnosisSystemBackend.dto.Response;
 import com.group3.DiagnosisSystemBackend.repository.PatientAddressRepository;
@@ -58,9 +58,9 @@ public class DoctorController {
 	@Autowired
 	private Web3j web3j;
 //	private String hospitalPrivaeKey = "0xca10c417e24a246700e36ef9b4f3e3d30fe9926f9b714de50a99498c3ab0d1de";  // aws
-//	private String medicalCertiticateContractAddress = "0xe02401b8b4d84189d0c013e9e20b2c87a33a5881";                            // aws
+//	private String medicalCertiticateContractAddress = "0xe02401b8b4d84189d0c013e9e20b2c87a33a5881";          // aws
 	private String hospitalPrivaeKey = "d5f66c6ae911366a9e21819bc9734031fc984456c404ac37bfcd2ddbc42200c5";    // local
-	private String medicalCertiticateContractAddress = "0xae65681993ad0b95540b743b1ea7995dd174b173";                            // local
+	private String medicalCertiticateContractAddress = "0xae65681993ad0b95540b743b1ea7995dd174b173";          // local
 	
 	@GetMapping("/deployAndLoadContract")
 	public String testWallet() throws Exception {
@@ -154,32 +154,35 @@ public class DoctorController {
 	}
 
 	@GetMapping("clinic/{roomNo}")
-	public Clinic getClinic(@PathVariable int roomNo) {
-		/*ClinicResponse response = new ClinicResponse();
-		com.group3.DiagnosisSystemBackend.dto.Clinic clinic = new com.group3.DiagnosisSystemBackend.dto.Clinic();
-		clinic.setClinic(clinicRepository.findById(roomNo));
-		if(clinic.getClinic() != null) {
+	public ClinicResponse getClinic(@PathVariable int roomNo) {
+		//get clinic from db
+		Clinic clinic = clinicRepository.findById(roomNo);
+		
+		//set clinicResponse and return clinicResponse
+		ClinicResponse response = new ClinicResponse();
+		if(clinic != null) {
 			response.setStatus(HttpStatus.OK.value());
 		} else {
-			clinic.setClinic(new ArrayList<com.group3.DiagnosisSystemBackend.dao.Clinic>());
 			response.setStatus(HttpStatus.BAD_REQUEST.value());
 		}
 		response.setResponse(clinic);
-		return response;*/
-		return clinicRepository.findById(roomNo);
+		return response;
 	}
 	
-//	@PutMapping("clinic/{roomNo}/{patient}")
-//	public ClinicReplaceResponse replaceClinic(@PathVariable int roomNo, @PathVariable String patient) {
-//		ClinicReplaceResponse response = new ClinicReplaceResponse();
-//		com.group3.DiagnosisSystemBackend.dto.Patient clinicReplace = new com.group3.DiagnosisSystemBackend.dto.Patient();
-//		ClinicReplaceResponse clinicReplace = clinicRepository.findById(roomNo);
-//		if(patient.equals("none")) patient = "";
-//		response.setStatus(HttpStatus.OK.value());
-//		clinicReplace.setPatient(patient);
-//		return response;
-//		//return clinicRepository.save(clinicReplace);
-//	}
+	@PutMapping("clinic/{roomNo}/{patient}")
+	public Response replaceClinic(@PathVariable int roomNo, @PathVariable String patient) {
+		
+		// get clinic patient and update patient
+		Clinic clinic = clinicRepository.findById(roomNo);
+		if(patient.equals("none")) patient = "";
+		clinic.setPatient(patient);
+		clinicRepository.save(clinic);
+		
+		// set ClinicResponse and return ClinicResponse
+		Response response = new Response(HttpStatus.OK.value(), true, "Success to update patient on room " + roomNo);
+		//response.setStatus(HttpStatus.OK.value());
+		return response;
+	}
 	
 	@GetMapping("doctor")
 	public List<Doctor> getAllDoctors() {
