@@ -57,6 +57,7 @@ import com.group3.DiagnosisSystemBackend.repository.DoctorRepository;
 @Tag(name = "Doctor API")
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:3000")
 public class DoctorController {
 
 	@Autowired
