@@ -11,6 +11,15 @@ public class PatientAddress {
 	@Id
     @Column(name = "address", nullable = false)
 	private String address;
+	
+	//database default constructor
+	public PatientAddress(){
+		   super();
+	}
+	
+	public PatientAddress(String address) {
+		this.address = address;
+	}
 
 	public String getAddress() {
 		return address;
