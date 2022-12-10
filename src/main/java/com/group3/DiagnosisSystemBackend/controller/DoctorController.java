@@ -37,6 +37,8 @@ import com.group3.DiagnosisSystemBackend.dao.PatientAddress;
 import com.group3.DiagnosisSystemBackend.dao.Clinic;
 import com.group3.DiagnosisSystemBackend.dao.Doctor;
 import com.group3.DiagnosisSystemBackend.dto.ClinicResponse;
+import com.group3.DiagnosisSystemBackend.dto.MedicalCertificateResponse;
+import com.group3.DiagnosisSystemBackend.dto.MedicalCertificatesList;
 import com.group3.DiagnosisSystemBackend.dto.PatientAddressResponse;
 import com.group3.DiagnosisSystemBackend.dto.PatientAddressesList;
 import com.group3.DiagnosisSystemBackend.dto.Response;
@@ -229,12 +231,56 @@ public class DoctorController {
 			return new ResponseEntity<>(new PatientAddressResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),  "Internal Server Error", null), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	@Operation(summary = "Get All Medical Certificate", 
+			   description = "Get All Medical Certificate")
+	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "OK"
+										, content = @Content(schema = @Schema(implementation = MedicalCertificateResponse.class), examples = {@ExampleObject(value = "{\"status\": 200, \"message\":\"OK\", \"data\": {\"medicalCertificatesList\": [{\"patientAddress\": \"0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96\", \"symptoms\":\"trauma\", \"levels\":\"2\"},{\"patientAddress\": \"0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96\", \"symptoms\":\"Burning,cancer\", \"levels\":\"2,0\"}]}}")})
+						   ),@ApiResponse(responseCode = "500", description = "Internal Server Error"
+						   				, content = @Content(schema = @Schema(implementation = MedicalCertificateResponse.class), examples = {@ExampleObject(value = "{\"status\": 500, \"message\":\"Internal Server Error\", \"data\": null}")})
+						   )
+				  })
+	@GetMapping(path = "medicalCertificates",  produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<MedicalCertificateResponse> getAllMedicalCertificate() 
+	{
+		try {
+			
+			//for save All MedicalCertificate 
+			MedicalCertificatesList medicalCertificatesList = new MedicalCertificatesList();
+			
+			//get patientAddressList from db
+			List<PatientAddress> patientAddressesList = patientAddressRepository.findAll();
+			
+			//get MedicalCertificate List by patientAddressList from blockchain
+			Credentials credentials = Credentials.create(hospitalPrivaeKey);
+			ContractGasProvider provider = new StaticGasProvider(BigInteger.valueOf(20000000000L), BigInteger.valueOf(6721975L));
+			MedicalCertificateContract contract = MedicalCertificateContract.load(medicalCertiticateContractAddress, web3j, credentials, provider);
+			for (int i = 0; i < patientAddressesList.size(); i++) {
+				String patientAddress = patientAddressesList.get(i).getAddress();
+				List medicalCertificateIds = contract.listCertificatesIdOfAddress(patientAddress).send();
+				for (int j = 0; j < medicalCertificateIds.size(); j++) {
+					BigInteger medicalCertificateId = (BigInteger) medicalCertificateIds.get(j);
+					//System.out.println(medicalCertificateId);
+			        String symtoms = contract.getSymptoms((BigInteger) medicalCertificateId).send();
+			        String levels = contract.getLevels((BigInteger) medicalCertificateId).send();
+			        medicalCertificatesList.addMedicalCertificate(new MedicalCertificate(patientAddress, symtoms, levels));
+				}
+			}
+			
+			//set MedicalCertificateResponse and return MedicalCertificateResponse
+			return new ResponseEntity<>(new MedicalCertificateResponse(HttpStatus.OK.value(), "OK", medicalCertificatesList), HttpStatus.OK);
+		}
+		catch (Exception e) {
+			System.out.println(e.toString());
+			return new ResponseEntity<>(new MedicalCertificateResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),  "Internal Server Error", null), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
 	
 	@Operation(summary = "Get information of room No in clinic", 
 	   		   description = "Get information of room No in clinic")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "OK"
-					 					, content = @Content(schema = @Schema(implementation = ClinicResponse.class), examples = {@ExampleObject(value = "{\"status\": 200, \"message\":\"OK\", \"data\":{\"patientAddressesList\": [{\"address\": \"0x2994433854D3805468467870E7231ECf46C6f9B8\"},{\"address\": \"0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96\"}]}}")})
+					 					, content = @Content(schema = @Schema(implementation = ClinicResponse.class), examples = {@ExampleObject(value = "{\"status\": 200, \"message\":\"OK\", \"data\":{\"roomNo\": \"1\", \"patient\": \"0x2c4AF1E09e27b7d24fE121a912Cf12b7b7582b96\"}]}}")})
 						   ),@ApiResponse(responseCode = "400", description = "Bad Request"
 			   				  			, content = @Content(schema = @Schema(implementation = ClinicResponse.class), examples = {@ExampleObject(value = "{\"status\": 400, \"message\":\"Bad Request\", \"data\": null}")})
 						   ),@ApiResponse(responseCode = "500", description = "Internal Server Error"
@@ -252,7 +298,6 @@ public class DoctorController {
 			//set clinicResponse and return clinicResponse
 			if(clinic != null) {
 				return new ResponseEntity<>(new ClinicResponse(HttpStatus.OK.value(), "OK", clinic), HttpStatus.OK);
-				//response.setStatus(HttpStatus.OK.value());
 			} else {
 				return new ResponseEntity<>(new ClinicResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", clinic), HttpStatus.BAD_REQUEST);
 			}
