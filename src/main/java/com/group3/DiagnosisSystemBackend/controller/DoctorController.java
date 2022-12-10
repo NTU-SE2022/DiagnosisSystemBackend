@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -72,7 +73,8 @@ public class DoctorController {
 	@Autowired
 	private Web3j web3j;
 	private String hospitalPrivaeKey = "0xca10c417e24a246700e36ef9b4f3e3d30fe9926f9b714de50a99498c3ab0d1de";  // aws
-	private String medicalCertiticateContractAddress = "0xe02401b8b4d84189d0c013e9e20b2c87a33a5881";          // aws
+	private String medicalCertiticateContractAddress = "0xb5ce1a4dbed6a878913157e76a3c24150d117840";          // aws new
+//	private String medicalCertiticateContractAddress = "0xe02401b8b4d84189d0c013e9e20b2c87a33a5881";          // aws old
 //	private String hospitalPrivaeKey = "d5f66c6ae911366a9e21819bc9734031fc984456c404ac37bfcd2ddbc42200c5";    // local
 //	private String medicalCertiticateContractAddress = "0xae65681993ad0b95540b743b1ea7995dd174b173";          // local
 	
@@ -167,7 +169,7 @@ public class DoctorController {
 				  })
 	@PostMapping(path = "/createMedicalCertificate", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<SuccessResponse> createMedicalCertificate(
-		@RequestBody(required=true) MedicalCertificate medicalCertificate) throws Exception 
+		@RequestBody(required=true) MedicalCertificate medicalCertificate)
 	{
 			
 		if (medicalCertificate.checkNULL()) {
@@ -274,6 +276,93 @@ public class DoctorController {
 			System.out.println(e.toString());
 			return new ResponseEntity<>(new MedicalCertificateResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),  "Internal Server Error", null), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+	
+	
+	@Operation(summary = "Burn All Medical Ceritificates in Patient Wallet", 
+			   description = "Burn All Medical Ceritificates in Patient Wallet")
+	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "OK"
+										, content = @Content(schema = @Schema(implementation = Response.class), examples = {@ExampleObject(value = "{\"status\": 200, \"message\":\"OK\", \"success\": true}")})
+						   ),@ApiResponse(responseCode = "500", description = "Internal Server Error"
+								, content = @Content(schema = @Schema(implementation = Response.class), examples = {@ExampleObject(value = "{\"status\": 500, \"message\":\"Internal Server Error\", \"success\": false}")})
+					       )
+				 })
+	@DeleteMapping(path = "medicalCertificates/{patientAddress}",  produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<SuccessResponse> burnAllMedicalCertificateOfPatientWallet(
+			@Parameter(description = "the patient addresses", required = true) @PathVariable("patientAddress") String patientAddress) 
+	{
+		try {
+			
+			//burn all MedicalCertificate of the patientAddress in blockchain
+			Credentials credentials = Credentials.create(hospitalPrivaeKey);
+			ContractGasProvider provider = new StaticGasProvider(BigInteger.valueOf(20000000000L), BigInteger.valueOf(6721975L));
+			MedicalCertificateContract contract = MedicalCertificateContract.load(medicalCertiticateContractAddress, web3j, credentials, provider);
+			contract.cleanAllCertificate(patientAddress).send();
+			
+			//check MedicalCertificate burn successfully
+			List medicalCertificateIds = contract.listCertificatesIdOfAddress(patientAddress).send();
+			if (medicalCertificateIds.isEmpty()) {
+				//blockchain delete successfully
+				//delete patientAddress in db
+				PatientAddress patient = patientAddressRepository.findByAddress(patientAddress);
+				patientAddressRepository.delete(patient);
+				return new ResponseEntity<>(new SuccessResponse(HttpStatus.OK.value(), "OK", true), HttpStatus.OK);
+			}
+			else {
+				System.out.println(medicalCertificateIds);
+				System.out.println("blockchain no work successfully.");
+				return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+        catch (Exception e) {
+        	System.out.println(e.toString());
+			return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+	}
+	
+	
+	
+	@Operation(summary = "Burn All Medical Ceritificates in blockchain", 
+			   description = "Burn All Medical Ceritificates in blockchain")
+	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "OK"
+										, content = @Content(schema = @Schema(implementation = SuccessResponse.class), examples = {@ExampleObject(value = "{\"status\": 200, \"message\":\"OK\", \"success\": true}")})
+						   ),@ApiResponse(responseCode = "500", description = "Internal Server Error"
+								, content = @Content(schema = @Schema(implementation = SuccessResponse.class), examples = {@ExampleObject(value = "{\"status\": 500, \"message\":\"Internal Server Error\", \"success\": false}")})
+					       )
+				 })
+	@DeleteMapping(path = "medicalCertificates",  produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<SuccessResponse> burnAllMedicalCertificates() 
+	{
+		try {
+			
+			//get all patientAddressList from db
+			List<PatientAddress> patientAddressesList = patientAddressRepository.findAll();
+			
+			//burn all MedicalCertificate List by patientAddressList from blockchain
+			Credentials credentials = Credentials.create(hospitalPrivaeKey);
+			ContractGasProvider provider = new StaticGasProvider(BigInteger.valueOf(20000000000L), BigInteger.valueOf(6721975L));
+			MedicalCertificateContract contract = MedicalCertificateContract.load(medicalCertiticateContractAddress, web3j, credentials, provider);
+			for (int i = 0; i < patientAddressesList.size(); i++) {
+				String patientAddress = patientAddressesList.get(i).getAddress();
+				contract.cleanAllCertificate(patientAddress).send();
+				
+				//check MedicalCertificate burn successfully
+				List medicalCertificateIds = contract.listCertificatesIdOfAddress(patientAddress).send();
+				if (!medicalCertificateIds.isEmpty()) {
+					System.out.println(medicalCertificateIds);
+					System.out.println("blockchain no work successfully.");
+					return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+			}
+			
+			//delete all patientAddress and return SuccessResponse
+			patientAddressRepository.deleteAll();
+			return new ResponseEntity<>(new SuccessResponse(HttpStatus.OK.value(), "OK", true), HttpStatus.OK);
+		}
+		catch (Exception e) {
+        	System.out.println(e.toString());
+			return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 	}
 
 	

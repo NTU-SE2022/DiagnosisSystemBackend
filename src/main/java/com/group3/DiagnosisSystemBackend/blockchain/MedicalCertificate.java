@@ -19,6 +19,9 @@ public class MedicalCertificate {
 	@Schema(example="0,2,1", description="levels are seperated by coma.")
 	private String levels;
 	
+	public MedicalCertificate() {
+	}
+	
 	public MedicalCertificate(String patientAddress, String symptoms, String levels) {
 		this.patientAddress = patientAddress;
 		this.symptoms = symptoms;
