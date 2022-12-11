@@ -25,6 +25,7 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.style.ToStringCreator;
 
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificate;
 import com.group3.DiagnosisSystemBackend.blockchain.MedicalCertificateContract;
@@ -137,7 +138,7 @@ public class DoctorController {
 	{
 		try {
 			String dbPassword = doctorRepository.findPasswordByAccount(doctor.getAccount());
-			if(dbPassword == null) return null;
+			if(dbPassword == null) return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);;
 			if (BCrypt.checkpw(doctor.getPassword(), dbPassword))
 				return new ResponseEntity<>(new SuccessResponse(HttpStatus.OK.value(), "OK", true), HttpStatus.OK);
 			else
@@ -417,16 +418,45 @@ public class DoctorController {
 			@Parameter(description = "update the patient address, patientAddress set \"none\" when patient exit room", required = true) @PathVariable("patientAddress") String patientAddress) 
 	{
 		try {
-			// get clinic patient and update patient
+			if (roomNo != 1 && roomNo != 2) {
+				return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
+			}
+			
+			// get current clinic
 			Clinic clinic = clinicRepository.findById(roomNo);
-			if(patientAddress.equals("none")) patientAddress = "";
-			clinic.setPatient(patientAddress);
-			clinicRepository.save(clinic);
-			// set SuccessResponse and return SuccessResponse
+						
+			
+			if (patientAddress.equals("none")) {
+				// exit clinic
+				clinic.setPatient(patientAddress);
+				clinicRepository.save(clinic);
+			}
+			else if(!clinic.getPatient().isEmpty() && !clinic.getPatient().equals(patientAddress)) {
+				// clinic already the patient 
+				System.out.println("clinic already the patient: " + clinic.getPatient());
+				return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
+			}
+			else {
+				Clinic patientOriginClinic = clinicRepository.findByPatient(patientAddress);
+				if (patientOriginClinic != null) {
+					//patient exit the roomNo of origin clinic
+					patientOriginClinic.setPatient("none");
+					// save db
+					clinicRepository.save(patientOriginClinic);
+				}
+				//patieint enter current roomNo
+				clinic.setPatient(patientAddress);
+					
+				// save db
+				clinicRepository.save(clinic);
+			}
 			return new ResponseEntity<>(new SuccessResponse(HttpStatus.CREATED.value(), "Created", true), HttpStatus.CREATED);
 		}
 		catch (Exception e) {
         	System.out.println(e.toString());
+        	if (e.toString().contains("patient address don't match wallet address format.")) {
+        		return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
+        	}
         	return new ResponseEntity<>(new SuccessResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", false), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -5,6 +5,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.web3j.crypto.WalletUtils;
+
 @Entity
 @Table(name = "patientAddress")
 public class PatientAddress {
@@ -25,7 +27,13 @@ public class PatientAddress {
 		return address;
 	}
 
-	public void setAddress(String address) {
-		this.address = address;
+	public void setAddress(String address) throws Exception {
+		if (WalletUtils.isValidAddress(this.address)) {
+			this.address = address;
+		}
+		else {
+			throw new Exception("patient address don't match wallet address format.");
+		}
 	}
+	
 }
