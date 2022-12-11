@@ -56,7 +56,7 @@ import com.group3.DiagnosisSystemBackend.repository.DoctorRepository;
 @Tag(name = "Doctor API")
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "https://diagnosis-back.host.chillmonkey.com.tw/"} )
+@CrossOrigin(origins = {"http://localhost:3000", "https://diagnosis-back.host.chillmonkey.com.tw/", "https://diagnosis.host.chillmonkey.com.tw/"} )
 public class DoctorController {
 
 	@Autowired
