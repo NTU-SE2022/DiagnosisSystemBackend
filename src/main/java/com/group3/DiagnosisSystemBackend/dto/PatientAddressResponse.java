@@ -1,22 +1,20 @@
 package com.group3.DiagnosisSystemBackend.dto;
 
-public class PatientAddressResponse {
-	private int status;
-	private Patient response;
-
-	public int getStatus() {
-		return status;
+public class PatientAddressResponse extends Response{
+	
+	private PatientAddressesList data;
+	
+	public PatientAddressResponse(int status, String message, PatientAddressesList patientsData) {
+		super(status, message);
+		this.data = patientsData;
+		// TODO Auto-generated constructor stub
 	}
 
-	public void setStatus(int status) {
-		this.status = status;
+	public PatientAddressesList getData() {
+		return data;
 	}
 
-	public Patient getResponse() {
-		return response;
-	}
-
-	public void setResponse(Patient response) {
-		this.response = response;
+	public void setData(PatientAddressesList patientsData) {
+		this.data = patientsData;
 	}
 }

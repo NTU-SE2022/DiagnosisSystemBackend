@@ -1,22 +1,20 @@
 package com.group3.DiagnosisSystemBackend.dto;
 
-public class SymptomResponse {
-	private int status;
-	private Symptom response;
+public class SymptomResponse extends Response{
 
-	public int getStatus() {
-		return status;
+	private SymptomsList data;
+	
+	public SymptomResponse(int status, String message, SymptomsList symtpomsList) {
+		super(status, message);
+		this.data = symtpomsList;
+		// TODO Auto-generated constructor stub
 	}
 
-	public void setStatus(int status) {
-		this.status = status;
+	public SymptomsList getData() {
+		return data;
 	}
 
-	public Symptom getResponse() {
-		return response;
-	}
-
-	public void setResponse(Symptom response) {
-		this.response = response;
+	public void setData(SymptomsList symtpomsList) {
+		this.data = symtpomsList;
 	}
 }
