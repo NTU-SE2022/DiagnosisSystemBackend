@@ -137,8 +137,9 @@ public class DoctorController {
 	public ResponseEntity<SuccessResponse> login(@RequestBody(required = true) Doctor doctor) 
 	{
 		try {
+			if (doctor.isEmpty()) return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
 			String dbPassword = doctorRepository.findPasswordByAccount(doctor.getAccount());
-			if(dbPassword == null) return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);;
+			if(dbPassword == null) return new ResponseEntity<>(new SuccessResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", false), HttpStatus.BAD_REQUEST);
 			if (BCrypt.checkpw(doctor.getPassword(), dbPassword))
 				return new ResponseEntity<>(new SuccessResponse(HttpStatus.OK.value(), "OK", true), HttpStatus.OK);
 			else

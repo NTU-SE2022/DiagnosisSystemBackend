@@ -35,4 +35,10 @@ public class Doctor {
 		this.password = password;
 	}
 	
+	public boolean isEmpty() {
+		if (account.isEmpty() || password.isEmpty()) {
+			return true;
+		}
+		return false;
+	}
 }
